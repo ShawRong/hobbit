@@ -1,7 +1,8 @@
-const Simple = artifacts.require("SimpleToken");
+const IntegratedTokenPlatform = artifacts.require("IntegratedTokenPlatform");
 
 module.exports = function(deployer) {
-    deployer.deploy(Simple, 10000).then(() => {
-        console.log("simple token deployed at address:", Simple.address)
-    });
+    deployer.deploy(IntegratedTokenPlatform, 'LLM Coin', 'llmc', 100000000, 10, 10000)
+        .then(instance => {
+            console.log("IntegratedTokenPlatform deployed at address:", instance.address);
+        });
 };
