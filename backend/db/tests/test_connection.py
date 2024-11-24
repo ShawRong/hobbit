@@ -45,5 +45,4 @@ class TestKeyManager(unittest.TestCase):
         self.assertFalse(self.key_manager.is_key_active("test_address"))
 
 if __name__ == '__main__':
-    #unittest.main()
-    create_collection('hobbit', 'test') 
+    unittest.main()
