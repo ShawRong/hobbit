@@ -1,6 +1,8 @@
 # contract_interaction.py
 from web3 import Web3
 import json
+import os
+import time
 
 # Replace with your Ethereum node's URL and port
 node_url = 'http://xayah.tpddns.cn:1039'
@@ -68,9 +70,11 @@ def isProvider(address):
     检查地址是否为API提供者
     """
     try:
-        return contract.functions.isProvider(address).call()
+        result = contract.functions.isProvider(address).call()
+        print(f"检查地址 {address} 的提供者状态: {result}")
+        return result
     except Exception as e:
-        print(f"检查提供者状态时出错: {e}")
+        print(f"检查提供者状态时出错: {str(e)}")
         return False
 
 def addApiProvider(provider_address, sender_address, private_key):
@@ -80,25 +84,38 @@ def addApiProvider(provider_address, sender_address, private_key):
     try:
         nonce = web3.eth.get_transaction_count(sender_address)
         
+        print(f"Debug: 发送者地址: {sender_address}")
+        print(f"Debug: 提供者地址: {provider_address}")
+        print(f"Debug: Chain ID: {web3.eth.chain_id}")
+        
         # 构建交易
         transaction = contract.functions.addApiProvider(provider_address).build_transaction({
             'from': sender_address,
             'gas': 2000000,
             'gasPrice': web3.eth.gas_price,
             'nonce': nonce,
+            'chainId': web3.eth.chain_id
         })
         
         # 签名交易
         signed_txn = web3.eth.account.sign_transaction(transaction, private_key)
         
         # 发送交易
-        tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+        tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction.hex())
         
         # 等待交易确认
         receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+        
+        # 等待几个区块确认
+        time.sleep(2)
+        
+        # 验证提供者状态
+        is_provider = contract.functions.isProvider(provider_address).call()
+        print(f"Debug: 添加后立即检查提供者状态: {is_provider}")
+        
         return receipt
     except Exception as e:
-        print(f"添加API提供者时出错: {e}")
+        print(f"添加API提供者时出错: {str(e)}")
         return None
 
 def removeApiProvider(provider_address, sender_address, private_key):
@@ -114,19 +131,20 @@ def removeApiProvider(provider_address, sender_address, private_key):
             'gas': 2000000,
             'gasPrice': web3.eth.gas_price,
             'nonce': nonce,
+            'chainId': web3.eth.chain_id
         })
         
         # 签名交易
         signed_txn = web3.eth.account.sign_transaction(transaction, private_key)
         
         # 发送交易
-        tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+        tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction.hex())
         
         # 等待交易确认
         receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
         return receipt
     except Exception as e:
-        print(f"移除API提供者时出错: {e}")
+        print(f"移除API提供者时出错: {str(e)}")
         return None
 
 def useApi(provider_address, amount, sender_address, private_key):
@@ -142,19 +160,79 @@ def useApi(provider_address, amount, sender_address, private_key):
             'gas': 2000000,
             'gasPrice': web3.eth.gas_price,
             'nonce': nonce,
+            'chainId': web3.eth.chain_id
         })
         
         # 签名交易
         signed_txn = web3.eth.account.sign_transaction(transaction, private_key)
         
         # 发送交易
-        tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+        tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction.hex())
         
         # 等待交易确认
         receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
         return receipt
     except Exception as e:
-        print(f"使用API时出错: {e}")
+        print(f"使用API时出错: {str(e)}")
+        return None
+
+def buyTokens(amount, sender_address, private_key):
+    """
+    购买代币
+    """
+    try:
+        nonce = web3.eth.get_transaction_count(sender_address)
+        
+        # 构建交易
+        transaction = contract.functions.buyTokens().build_transaction({
+            'from': sender_address,
+            'value': web3.to_wei(amount, 'ether'),  # 发送的ETH数量
+            'gas': 2000000,
+            'gasPrice': web3.eth.gas_price,
+            'nonce': nonce,
+            'chainId': web3.eth.chain_id  # 添加 chainId
+        })
+        
+        # 签名交易
+        signed_txn = web3.eth.account.sign_transaction(transaction, private_key)
+        
+        # 发送交易 - 使用 hex() 转换
+        tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction.hex())
+        
+        # 等待交易确认
+        receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+        return receipt
+    except Exception as e:
+        print(f"购买代币时出错: {str(e)}")
+        return None
+
+def burnTokens(eth_amount, sender_address, private_key):
+    """
+    销毁代币
+    """
+    try:
+        nonce = web3.eth.get_transaction_count(sender_address)
+        
+        # 构建交易
+        transaction = contract.functions.burnTokens(web3.to_wei(eth_amount, 'ether')).build_transaction({
+            'from': sender_address,
+            'gas': 2000000,
+            'gasPrice': web3.eth.gas_price,
+            'nonce': nonce,
+            'chainId': web3.eth.chain_id  # 添加 chainId
+        })
+        
+        # 签名交易
+        signed_txn = web3.eth.account.sign_transaction(transaction, private_key)
+        
+        # 发送交易 - 使用 hex() 转换
+        tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction.hex())
+        
+        # 等待交易确认
+        receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+        return receipt
+    except Exception as e:
+        print(f"销毁代币时出错: {str(e)}")
         return None
 
 # 添加一些辅助函数
@@ -179,26 +257,109 @@ def get_contract_address():
     """
     return contract_address
 
+def get_contract_info():
+    """
+    获取合约的基本信息
+    """
+    try:
+        owner = contract.functions.owner().call()
+        rate = contract.functions.rate().call()
+        start_time = contract.functions.startTime().call()
+        end_time = contract.functions.endTime().call()
+        
+        print("\n=== 合约信息 ===")
+        print(f"合约地址: {contract.address}")
+        print(f"合约所有者: {owner}")
+        print(f"代币兑换率: {rate}")
+        print(f"开始时间: {start_time}")
+        print(f"结束时间: {end_time}")
+        print("================\n")
+        
+        return {
+            'owner': owner,
+            'rate': rate,
+            'start_time': start_time,
+            'end_time': end_time
+        }
+    except Exception as e:
+        print(f"获取合约信息时出错: {str(e)}")
+        return None
+
 # 使用示例
 if __name__ == "__main__":
     # 示例地址和私钥（请替换为实际值）
-    owner_address = "0x3d47335fd2b7330d90c6b6f674cf0735de094549"
-    owner_address = web3.to_checksum_address(owner_address)
+    owner_address = ""
     owner_private_key = "0ad1df7638c948fd3181361d9436e901d0540fde045d02fdc05c208d605277e5"
-    provider_address = "0x57BBEC496A82eC51fBFFED75Eaa91E57e6510E83"
+    _address = "0x57BBEC496A82eC51fBFFED75Eaa91E57e6510E83"
+    _private_key = "faf683280f42e11e130d57797f67e00d19d1ad1e3463b4f29340d21e83f8c61f"
     
     # 获取合约函数列表
     print("合约函数列表:")
     print(get_function_list())
     
     # 检查余额
-    balance = balanceOf(owner_address)
+    balance = balanceOf(_address)
     print(f"账户余额: {balance}")
-    
+
     # 检查是否为提供者
-    is_provider = isProvider(provider_address)
-    print(f"是否为提供者: {is_provider}")
+    try:
+        print(f"尝试添加API提供者: {_address}")
+        
+        # 检查初始状态
+        initial_status = contract.functions.isProvider(_address).call()
+        print(f"初始提供者状态: {initial_status}")
+        
+        # 添加提供者
+        result = addApiProvider(_address, owner_address, owner_private_key)
+        if result:
+            # 等待交易确认
+            web3.eth.wait_for_transaction_receipt(result['transactionHash'])
+            print(f"成功添加API提供者，交易哈希: {result['transactionHash'].hex()}")
+            
+            # 多等待几秒确保状态更新
+            time.sleep(5)
+            
+            # 检查状态
+            is_provider = contract.functions.isProvider(_address).call()
+            print(f"添加后提供者状态: {is_provider}")
+            
+            # 获取提供者详细信息
+            provider_info = contract.functions.apiProviders(_address).call()
+            print(f"提供者详细信息: {provider_info}")
+            
+        else:
+            print("添加API提供者失败")
+            
+    except Exception as e:
+        print(f"测试过程中发生错误: {str(e)}")
+
+    try:
+        print(f"尝试移除API提供者: {_address}")
+        result = removeApiProvider(_address, owner_address, owner_private_key)
+        if result:
+            print(f"成功移除API提供者，交易哈希: {result['transactionHash'].hex()}")
+        else:
+            print("移除API提供者失败")
+            
+        is_provider = isProvider(_address)
+        print(f"是否为提供者: {is_provider}")
+    except Exception as e:
+        print(f"移除API提供者过程中发生错误: {str(e)}")
     
     # 获取提供者信息
-    provider_info = apiProviders(provider_address)
+    provider_info = apiProviders(_address)
     print(f"提供者信息: {provider_info}")
+
+    #amount = 1000
+    #buyTokens(amount, _address, _private_key)
+    #print(f"buy tokens: {amount}{_address}")
+    #burnTokens(amount, _address, _private_key)
+    #print(f"burn tokens: {amount}{_address}")
+
+    # 获取合约信息
+    contract_info = get_contract_info()
+    
+    if contract_info:
+        print(f"当前使用的owner地址: {owner_address}")
+        print(f"实际合约owner地址: {contract_info['owner']}")
+        print(f"两者是否相同: {contract_info['owner'].lower() == owner_address.lower()}\n")

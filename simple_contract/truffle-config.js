@@ -100,7 +100,6 @@ module.exports = {
         host: "xayah.tpddns.cn",
         port: 1039,
         network_id: "*",
-        from: "0x57BBEC496A82eC51fBFFED75Eaa91E57e6510E83"
     }
   },
 
