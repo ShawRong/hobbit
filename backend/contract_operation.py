@@ -30,7 +30,7 @@ def get_abi_from_json(file_path):
         print(f"发生错误: {e}")
 
 # 使用示例
-abiwithaddress = get_abi_from_json('./hobbit/backend/docs/SimpleToken.json')
+abiwithaddress = get_abi_from_json('./hobbit/backend/docs/IntegratedTokenPlatform.json')
 contract_abi = abiwithaddress[0]
 contract_address = abiwithaddress[1]['1337']['address']
 
@@ -38,46 +38,167 @@ contract_address = abiwithaddress[1]['1337']['address']
 # Create contract object
 contract = web3.eth.contract(address=contract_address, abi=contract_abi)
 
+def apiProviders(provider_address):
+    """
+    获取API提供者的信息
+    """
+    try:
+        provider = contract.functions.apiProviders(provider_address).call()
+        return {
+            'providerAddress': provider[0],
+            'earnings': provider[1]
+        }
+    except Exception as e:
+        print(f"获取API提供者信息时出错: {e}")
+        return None
+
+def balanceOf(address):
+    """
+    获取指定地址的代币余额
+    """
+    try:
+        balance = contract.functions.balanceOf(address).call()
+        return balance
+    except Exception as e:
+        print(f"获取余额时出错: {e}")
+        return None
+
+def isProvider(address):
+    """
+    检查地址是否为API提供者
+    """
+    try:
+        return contract.functions.isProvider(address).call()
+    except Exception as e:
+        print(f"检查提供者状态时出错: {e}")
+        return False
+
+def addApiProvider(provider_address, sender_address, private_key):
+    """
+    添加API提供者
+    """
+    try:
+        nonce = web3.eth.get_transaction_count(sender_address)
+        
+        # 构建交易
+        transaction = contract.functions.addApiProvider(provider_address).build_transaction({
+            'from': sender_address,
+            'gas': 2000000,
+            'gasPrice': web3.eth.gas_price,
+            'nonce': nonce,
+        })
+        
+        # 签名交易
+        signed_txn = web3.eth.account.sign_transaction(transaction, private_key)
+        
+        # 发送交易
+        tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+        
+        # 等待交易确认
+        receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+        return receipt
+    except Exception as e:
+        print(f"添加API提供者时出错: {e}")
+        return None
+
+def removeApiProvider(provider_address, sender_address, private_key):
+    """
+    移除API提供者
+    """
+    try:
+        nonce = web3.eth.get_transaction_count(sender_address)
+        
+        # 构建交易
+        transaction = contract.functions.removeApiProvider(provider_address).build_transaction({
+            'from': sender_address,
+            'gas': 2000000,
+            'gasPrice': web3.eth.gas_price,
+            'nonce': nonce,
+        })
+        
+        # 签名交易
+        signed_txn = web3.eth.account.sign_transaction(transaction, private_key)
+        
+        # 发送交易
+        tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+        
+        # 等待交易确认
+        receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+        return receipt
+    except Exception as e:
+        print(f"移除API提供者时出错: {e}")
+        return None
+
+def useApi(provider_address, amount, sender_address, private_key):
+    """
+    使用API服务
+    """
+    try:
+        nonce = web3.eth.get_transaction_count(sender_address)
+        
+        # 构建交易
+        transaction = contract.functions.useApi(provider_address, amount).build_transaction({
+            'from': sender_address,
+            'gas': 2000000,
+            'gasPrice': web3.eth.gas_price,
+            'nonce': nonce,
+        })
+        
+        # 签名交易
+        signed_txn = web3.eth.account.sign_transaction(transaction, private_key)
+        
+        # 发送交易
+        tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+        
+        # 等待交易确认
+        receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+        return receipt
+    except Exception as e:
+        print(f"使用API时出错: {e}")
+        return None
+
+# 添加一些辅助函数
+
 def get_function_list():
-    function_list = []
-    for item in contract_abi:
-        if item['type'] == 'function':
-            function_list.append(item['name'])
-    return function_list
+    """
+    获取合约的所有函数列表
+    """
+    try:
+        function_list = []
+        for item in contract_abi:
+            if item['type'] == 'function':
+                function_list.append(item['name'])
+        return function_list
+    except Exception as e:
+        print(f"获取函数列表时出错: {e}")
+        return []
 
-def get_balance(address):
-    balance = contract.functions.getBalance(address).call()
-    return balance
+def get_contract_address():
+    """
+    获取合约地址
+    """
+    return contract_address
 
-def transfer_tokens(from_address, to_address, amount, private_key):
-    # Build transaction
-    nonce = web3.eth.getTransactionCount(from_address)
-    transaction = contract.functions.transfer(to_address, amount).buildTransaction({
-        'chainId': 1,  # Change this to your network's chain ID
-        'gas': 2000000,
-        'gasPrice': web3.toWei('50', 'gwei'),
-        'nonce': nonce,
-    })
-
-    # Sign transaction
-    signed_txn = web3.eth.account.signTransaction(transaction, private_key=private_key)
-
-    # Send transaction
-    txn_hash = web3.eth.sendRawTransaction(signed_txn.rawTransaction)
-    return txn_hash.hex()
-
+# 使用示例
 if __name__ == "__main__":
-    # Example: Check balance
-    address_to_check = "0x57BBEC496A82eC51fBFFED75Eaa91E57e6510E83"  # Replace with the address you want to check
+    # 示例地址和私钥（请替换为实际值）
+    owner_address = "0x3d47335fd2b7330d90c6b6f674cf0735de094549"
+    owner_address = web3.to_checksum_address(owner_address)
+    owner_private_key = "0ad1df7638c948fd3181361d9436e901d0540fde045d02fdc05c208d605277e5"
+    provider_address = "0x57BBEC496A82eC51fBFFED75Eaa91E57e6510E83"
+    
+    # 获取合约函数列表
+    print("合约函数列表:")
     print(get_function_list())
-    balance = get_balance(address_to_check)
-    print(f"Balance: {balance}")
-
-    # Example: Transfer tokens
-    #from_address = '0xYourAddress'  # Replace with your address
-    #to_address = '0xRecipientAddress'  # Replace with recipient address
-    #amount = 1000000000000000000  # Amount in wei (1 ETH = 10^18 wei)
-    #private_key = 'YOUR_PRIVATE_KEY'  # Replace with your private key
-
-    #txn_hash = transfer_tokens(from_address, to_address, amount, private_key)
-    #print(f"Transaction Hash: {txn_hash}")
+    
+    # 检查余额
+    balance = balanceOf(owner_address)
+    print(f"账户余额: {balance}")
+    
+    # 检查是否为提供者
+    is_provider = isProvider(provider_address)
+    print(f"是否为提供者: {is_provider}")
+    
+    # 获取提供者信息
+    provider_info = apiProviders(provider_address)
+    print(f"提供者信息: {provider_info}")
