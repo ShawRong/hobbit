@@ -3,9 +3,11 @@ from web3 import Web3
 import json
 import os
 import time
+import requests
 
 # Replace with your Ethereum node's URL and port
 node_url = 'http://xayah.tpddns.cn:1039'
+trans_url = 'http://183.17.226.90:1040'
 
 # Example: 'http://your-node-ip:your-port'
 web3 = Web3(Web3.HTTPProvider(node_url))
@@ -285,11 +287,93 @@ def get_contract_info():
         print(f"获取合约信息时出错: {str(e)}")
         return None
 
+def transferOwnership(new_owner, sender_address):
+    """
+    转移合约所有权
+    """
+    try:
+        # 首先检查当前所有者
+        current_owner = contract.functions.owner().call()
+        if current_owner.lower() != sender_address.lower():
+            raise Exception(f"只有当前所有者才能转移所有权。当前所有者: {current_owner}")
+            
+        nonce = web3.eth.get_transaction_count(sender_address)
+        
+        print(f"Debug: 当前所有者: {sender_address}")
+        print(f"Debug: 新所有者: {new_owner}")
+        print(f"Debug: Chain ID: {web3.eth.chain_id}")
+        
+        # 构建交易
+        transaction = contract.functions.transferOwnership(new_owner).build_transaction({
+            'from': sender_address,
+            'gas': 2000000,
+            'gasPrice': web3.eth.gas_price,
+            'nonce': nonce,
+            'chainId': web3.eth.chain_id,
+        })
+        
+        # 准备签名请求
+        sign_request = {
+            "id": 2,
+            "jsonrpc": "2.0",
+            "method": "account_signTransaction",
+            "params": [{
+                "from": transaction['from'],
+                "gas": hex(transaction['gas']),
+                "gasPrice": hex(transaction['gasPrice']),
+                "input": transaction['data'],
+                "nonce": hex(transaction['nonce']),
+                "to": transaction['to'],
+                "value": "0x0",
+                "chainId": hex(1337)  # 使用正确的 chainId
+            }]
+        }
+        
+        print("Debug: 签名请求:", json.dumps(sign_request, indent=2))
+        
+        # 发送签名请求
+        headers = {'Content-Type': 'application/json'}
+        response = requests.post(
+            trans_url,  # 使用签名服务的 URL
+            data=json.dumps(sign_request),
+            headers=headers
+        )
+        
+        if response.status_code != 200:
+            raise Exception(f"签名请求失败: {response.text}")
+            
+        # 解析响应
+        sign_result = response.json()
+        if 'error' in sign_result:
+            raise Exception(f"签名错误: {sign_result['error']}")
+            
+        print("Debug: 签名响应:", json.dumps(sign_result, indent=2))
+        
+        # 发送已签名的交易
+        tx_hash = web3.eth.send_raw_transaction(sign_result['result']['raw'])
+        
+        # 等待交易确认
+        receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+        
+        # 验证所有权转移
+        new_owner_check = contract.functions.owner().call()
+        print(f"所有权转移后的新所有者: {new_owner_check}")
+        
+        if new_owner_check.lower() == new_owner.lower():
+            print("所有权转移成功！")
+        else:
+            print("警告：所有权可能未成功转移")
+            
+        return receipt
+    except Exception as e:
+        print(f"转移所有权时出错: {str(e)}")
+        return None
+
 # 使用示例
 if __name__ == "__main__":
-    # 示例地址和私钥（请替换为实际值）
-    owner_address = ""
-    owner_private_key = "0ad1df7638c948fd3181361d9436e901d0540fde045d02fdc05c208d605277e5"
+    #contract_info = get_contract_info()
+    owner_address= "0x57BBEC496A82eC51fBFFED75Eaa91E57e6510E83"
+    owner_private_key = "faf683280f42e11e130d57797f67e00d19d1ad1e3463b4f29340d21e83f8c61f"
     _address = "0x57BBEC496A82eC51fBFFED75Eaa91E57e6510E83"
     _private_key = "faf683280f42e11e130d57797f67e00d19d1ad1e3463b4f29340d21e83f8c61f"
     
@@ -357,9 +441,3 @@ if __name__ == "__main__":
     #print(f"burn tokens: {amount}{_address}")
 
     # 获取合约信息
-    contract_info = get_contract_info()
-    
-    if contract_info:
-        print(f"当前使用的owner地址: {owner_address}")
-        print(f"实际合约owner地址: {contract_info['owner']}")
-        print(f"两者是否相同: {contract_info['owner'].lower() == owner_address.lower()}\n")

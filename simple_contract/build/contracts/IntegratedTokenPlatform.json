@@ -26085,12 +26085,12 @@
         }
       },
       "links": {},
-      "address": "0xd8f7C264f1fAE1b4053d49B18c250362709c2221",
-      "transactionHash": "0x07a749dc6bd1848cd96fe842627baedc8e194c298f0baa86009fc3aa7f66d2ba"
+      "address": "0xc589e5e82b02830a8beA759fca1F3B71c27BF5b5",
+      "transactionHash": "0xba1a0e572bd04270756074a2085d502e9f12a052e8128630b53efe049e1d17ce"
     }
   },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2024-11-24T16:08:30.464Z",
+  "updatedAt": "2024-11-24T18:46:04.837Z",
   "networkType": "ethereum",
   "devdoc": {
     "events": {
