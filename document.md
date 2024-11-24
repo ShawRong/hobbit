@@ -57,3 +57,10 @@ Private Keys:
 (7) 8d8808ed755fed7f8ca7ccaca4ce1320e136be3f95984329e4c83bc0fc0df1cb
 (8) 058a9941df2ae1b84e084daf4d30916e01b6c4f54067611ad13459089dc24d3a
 (9) 6a8732a38b3f17e0c27299f164289dabc0bd88b6fbd935be6774343ff3194feb
+
+
+
+
+geth --datadir . --http -http.api "eth,net,web3,personal,miner,admin" --http.corsdomain "" --http.vhosts "" --http.addr '0.0.0.0' --http.port 8545 --dev console --allow-insecure-unlock --keystore . --password password.txt --unlock 57bbec496a82ec51fbffed75eaa91e57e6510e83
+
+truffle migrate --reset --network goeth
