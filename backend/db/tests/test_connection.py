@@ -1,8 +1,8 @@
 # Test code for KeyManager
-
 import unittest
 from unittest.mock import patch, MagicMock
 from key_manager import KeyManager  # Assuming the class is in key_manager.py
+from mongodb import create_collection
 
 class TestKeyManager(unittest.TestCase):
     def setUp(self):
@@ -10,6 +10,7 @@ class TestKeyManager(unittest.TestCase):
         self.mongo_uri = "mongodb://localhost:27017"
         self.db_name = "test_db"
         self.collection_name = "test_collection"
+        create_collection("test_db", "test_collection")
         self.key_manager = KeyManager(self.api_url, self.mongo_uri, self.db_name, self.collection_name)
 
     def tearDown(self):
@@ -44,4 +45,5 @@ class TestKeyManager(unittest.TestCase):
         self.assertFalse(self.key_manager.is_key_active("test_address"))
 
 if __name__ == '__main__':
-    unittest.main()
+    #unittest.main()
+    create_collection('hobbit', 'test') 
