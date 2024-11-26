@@ -18,8 +18,7 @@ class LLMAPIManager:
     def add_api(self, llm_api, wallet_address, other_info):
         for api in self.apis:
             if api['llm_api'] == llm_api:
-                print(f"API already exists, update it using new: {api}")  # 调试信息
-                api['llm_api'] = llm_api
+                print(f"API already exists, delet it first: {api}")  # 调试信息
                 return
         with self.mux:
             api_info = {
@@ -47,13 +46,23 @@ class LLMAPIManager:
                         "llm_api": document['llm_api'],
                         "wallet_address": document['wallet_address'],
                         "other_info": document['other_info'],
+                        "_id": str(document['_id'])  # 将 ObjectId 转换为字符串
                     })
             except PyMongoError as e:
                 print(f"Error loading from database: {e}")
 
     def get_api_info(self):
         print(f"Current APIs: {self.apis}")  # 调试信息
-        return self.apis
+        return [{"llm_api": api["llm_api"], "wallet_address": api["wallet_address"], "other_info": api["other_info"], "_id": str(api["_id"])} for api in self.apis]
+
+    def remove_api(self, llm_api):
+        with self.mux:
+            for api in self.apis[:]:  # Create a copy of the list to iterate safely
+                if api['llm_api'] == llm_api:
+                    self.apis.remove(api)
+                    self.save_to_db()
+                    return True
+            return False
 
 llm_api_manager = LLMAPIManager("mongodb://localhost:27017", "hobbit", "llm_apis")
 

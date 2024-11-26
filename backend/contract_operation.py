@@ -42,6 +42,7 @@ contract_address = abiwithaddress[1]['1337']['address']
 # Create contract object
 contract = web3.eth.contract(address=contract_address, abi=contract_abi)
 
+# 前后端使用
 def apiProviders(provider_address):
     """
     获取API提供者的信息
@@ -56,6 +57,7 @@ def apiProviders(provider_address):
         print(f"获取API提供者信息时出错: {e}")
         return None
 
+# 前后端使用
 def balanceOf(address):
     """
     获取指定地址的代币余额
@@ -67,6 +69,7 @@ def balanceOf(address):
         print(f"获取余额时出错: {e}")
         return None
 
+# 前后端使用
 def isProvider(address):
     """
     检查地址是否为API提供者
@@ -79,6 +82,7 @@ def isProvider(address):
         print(f"检查提供者状态时出错: {str(e)}")
         return False
 
+# 后端使用
 def addApiProvider(provider_address, sender_address, private_key):
     """
     添加API提供者
@@ -120,6 +124,8 @@ def addApiProvider(provider_address, sender_address, private_key):
         print(f"添加API提供者时出错: {str(e)}")
         return None
 
+
+# 后端使用
 def removeApiProvider(provider_address, sender_address, private_key):
     """
     移除API提供者
@@ -149,6 +155,8 @@ def removeApiProvider(provider_address, sender_address, private_key):
         print(f"移除API提供者时出错: {str(e)}")
         return None
 
+
+# 前端使用
 def useApi(provider_address, amount, sender_address, private_key):
     """
     使用API服务
@@ -178,6 +186,7 @@ def useApi(provider_address, amount, sender_address, private_key):
         print(f"使用API时出错: {str(e)}")
         return None
 
+# 前端使用
 def buyTokens(amount, sender_address, private_key):
     """
     购买代币
@@ -208,6 +217,7 @@ def buyTokens(amount, sender_address, private_key):
         print(f"购买代币时出错: {str(e)}")
         return None
 
+#前端使用
 def burnTokens(eth_amount, sender_address, private_key):
     """
     销毁代币
