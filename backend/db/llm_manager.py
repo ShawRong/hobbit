@@ -1,24 +1,21 @@
 # llm_api_manager.py
 from flask import Flask, jsonify, request
-from pymongo import MongoClient
-from pymongo.errors import PyMongoError
+import pickle
+import os
 import threading
-from bson import ObjectId
 
 app = Flask(__name__)
 
 class LLMAPIManager:
-    def __init__(self, mongo_uri, db_name, collection_name):
+    def __init__(self, data_file='llm_apis.pkl'):
         self.mux = threading.RLock()
-        self.client = MongoClient(mongo_uri)
-        self.collection = self.client[db_name][collection_name]
-        self.apis = []
-        self.load_from_db()
+        self.data_file = data_file
+        self.apis = self.load_from_db()
 
     def add_api(self, llm_api, wallet_address, other_info):
         for api in self.apis:
             if api['llm_api'] == llm_api:
-                print(f"API already exists, delet it first: {api}")  # 调试信息
+                print(f"API already exists, delete it first: {api}")  # Debug info
                 return
         with self.mux:
             api_info = {
@@ -32,28 +29,24 @@ class LLMAPIManager:
     def save_to_db(self):
         with self.mux:
             try:
-                self.collection.delete_many({})
-                for info in self.apis:
-                    self.collection.insert_one(info)
-            except PyMongoError as e:
-                print(f"Error saving to database: {e}")
+                with open(self.data_file, 'wb') as f:
+                    pickle.dump(self.apis, f)
+            except Exception as e:
+                print(f"Error saving to file: {e}")
 
     def load_from_db(self):
-        with self.mux:
-            try:
-                for document in self.collection.find():
-                    self.apis.append({
-                        "llm_api": document['llm_api'],
-                        "wallet_address": document['wallet_address'],
-                        "other_info": document['other_info'],
-                        "_id": str(document['_id'])  # 将 ObjectId 转换为字符串
-                    })
-            except PyMongoError as e:
-                print(f"Error loading from database: {e}")
+        if os.path.exists(self.data_file):
+            with open(self.data_file, 'rb') as f:
+                try:
+                    return pickle.load(f)
+                except Exception as e:
+                    print(f"Error loading from file: {e}")
+                    return []
+        return []
 
     def get_api_info(self):
-        print(f"Current APIs: {self.apis}")  # 调试信息
-        return [{"llm_api": api["llm_api"], "wallet_address": api["wallet_address"], "other_info": api["other_info"], "_id": str(api["_id"])} for api in self.apis]
+        print(f"Current APIs: {self.apis}")  # Debug info
+        return self.apis
 
     def remove_api(self, llm_api):
         with self.mux:
@@ -64,7 +57,7 @@ class LLMAPIManager:
                     return True
             return False
 
-llm_api_manager = LLMAPIManager("mongodb://localhost:27017", "hobbit", "llm_apis")
+llm_api_manager = LLMAPIManager()
 
 @app.route('/apis', methods=['GET'])
 def get_apis():

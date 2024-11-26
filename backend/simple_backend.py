@@ -8,7 +8,7 @@ app = Flask(__name__)
 # 固定的余额值
 owner_address= "0x57BBEC496A82eC51fBFFED75Eaa91E57e6510E83"
 owner_private_key = "faf683280f42e11e130d57797f67e00d19d1ad1e3463b4f29340d21e83f8c61f"
-llm_api_manager = LLMAPIManager("mongodb://localhost:27017", "hobbit", "llm_apis")
+llm_api_manager = LLMAPIManager()
 
 #simple balance  
 @app.route('/balance', methods=['GET'])
